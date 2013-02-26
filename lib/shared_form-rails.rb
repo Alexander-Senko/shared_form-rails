@@ -1,4 +1,4 @@
-require 'shared_form-rails/engine'
+require 'shared_form/engine'
 
-module SharedFormRails
+module SharedForm
 end

@@ -1,12 +1,12 @@
 $:.push File.expand_path('../lib', __FILE__)
 
 # Maintain your gem's version:
-require 'shared_form-rails/version'
+require 'shared_form/version'
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
 	s.name        = 'shared_form-rails'
-	s.version     = SharedFormRails::VERSION
+	s.version     = SharedForm::VERSION
 	s.authors     = [ 'Alexander Senko' ]
 	s.email       = [ 'Alexander.Senko@gmail.com' ]
 #	s.homepage    = 'TODO'

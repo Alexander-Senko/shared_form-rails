@@ -1,2 +1,2 @@
-SharedFormRails::Engine.routes.draw do
+SharedForm::Engine.routes.draw do
 end
