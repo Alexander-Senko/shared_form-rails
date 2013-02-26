@@ -7,11 +7,11 @@ require 'shared_form-rails/version'
 Gem::Specification.new do |s|
 	s.name        = 'shared_form-rails'
 	s.version     = SharedFormRails::VERSION
-	s.authors     = ['TODO: Your name']
-	s.email       = ['TODO: Your email']
-	s.homepage    = 'TODO'
-	s.summary     = 'TODO: Summary of SharedFormRails.'
-	s.description = 'TODO: Description of SharedFormRails.'
+	s.authors     = [ 'Alexander Senko' ]
+	s.email       = [ 'Alexander.Senko@gmail.com' ]
+#	s.homepage    = 'TODO'
+	s.summary     = 'SharedForm for Rails.'
+#	s.description = 'TODO: Description of SharedFormRails.'
 
 	s.files = Dir['{app,config,db,lib}/**/*'] + ['MIT-LICENSE', 'rails', 'README.rdoc']
 
