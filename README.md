@@ -37,10 +37,10 @@ Explicitly with JavaScript:
 	var editor = new SharedForm($('my_form'));
 ```
 
-Or just add a `multiple` class to your `form` element:
+Or just add a `shared` class to your `form` element:
 
 ```html
-	<form class="multiple" …>
+	<form class="shared" …>
 		…
 	</form>
 ```
@@ -55,9 +55,11 @@ Or just add a `multiple` class to your `form` element:
 	editor.remove(some_id);
 
 	editor.add({
-		id:        'new_object',
-		thumbnail: { url: image_url },
-		preview:   { url: image_url }
+		id:   'new_object',
+		data: {
+			thumbnail: { url: image_url },
+			preview:   { url: image_url }
+		}
 	});
 ```
 
