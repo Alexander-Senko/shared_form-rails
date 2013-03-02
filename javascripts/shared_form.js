@@ -45,24 +45,25 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 					}
 				}
 
-				new Ajax.Request(this.objectURL(object), {
-					postBody: file,
-					requestHeaders: {
-						'Content-Type': file.type,
-						'X-File-Name':  file.name
-					},
-					onSuccess: function(transport) {
+				var data    = new FormData();
+				var request = new XMLHttpRequest(); // Ajax.Request can't handle multipart/form-data
+				request.open('POST', this.objectURL(object), true);
+				data.append(this.form.name + '[data]', file);
+				request.onload = function (event) {
+					var responseJSON = event.target.response.evalJSON();
+
+					if (parseInt(request.status / 100) == 2 || request.status == 304) {
 						if (window.URL)
 							URL.revokeObjectURL(object.thumbnail.url);
-						this.register(transport.responseJSON, object.id);
-					}.bind(this),
-					onFailure: function(transport) {
+						this.register(responseJSON, object.id);
+					} else {
 						object.thumbnailElement.fire('upload:failed', Object.extend(object, {
 							file:   file,
-							errors: transport.responseJSON
+							errors: responseJSON
 						}));
-					}.bind(this)
-				});
+					}
+				}.bind(this);
+				request.send(data);
 			}, this);
 		}.bind(this)
 		).observe('dragenter', Event.stop
