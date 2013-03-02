@@ -26,22 +26,23 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 			$A(event.dataTransfer.files).each(function(file) {
 				// TODO: extract meta-info
 				if (file.type.startsWith('image')) {
-					if (window.URL) { // i.e. Gecko 2.0
-						var imageURL = URL.createObjectURL(file);
-						var object = this.add({ filename: file.name,
-							thumbnail: { url: imageURL },
-							preview:   { url: imageURL }
-						});
-					} else { // i.e. Gecko 1.9.2
-						object = this.add({ filename: file.name,
-							thumbnail: {},
-							preview:   {}
-						});
-						Event.observe(new FileReader(), 'load', function(event) {
-							object.thumbnail.url = event.target.result;
-							object.preview.url   = event.target.result;
+					var object = this.add({ filename: file.name,
+						thumbnail: {},
+						preview:   {},
+
+						setImageURL: function (imageURL) {
+							object.thumbnail.url = imageURL;
+							object.preview.url   = imageURL;
 							this.register(object);
-						}.bind(this)).readAsDataURL(file);
+						}.bind(this)
+					});
+
+					if (window.URL) { // i.e. Gecko 2.0
+						object.setImageURL(URL.createObjectURL(file));
+					} else { // i.e. Gecko 1.9.2
+						Event.observe(new FileReader(), 'load', function(event) {
+							object.setImageURL(event.target.result);
+						}).readAsDataURL(file);
 					}
 				}
 
