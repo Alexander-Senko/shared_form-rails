@@ -30,7 +30,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 							thumbnail: {},
 							preview:   {}
 						},
-						setImageURL: function (imageURL) {
+							setImageURL: function (imageURL) {
 							object.data.thumbnail.url = imageURL;
 							object.data.preview.url   = imageURL;
 							this.register(object);
@@ -492,6 +492,6 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 SharedForm.Form.Element.Variants.MAP[false] = 0;
 SharedForm.Form.Element.Variants.MAP[true]  = 1;
 
-SharedForm.Form.SELECTOR = 'form.multiple';
+SharedForm.Form.SELECTOR = 'form.shared';
 
 document.observe('dom:loaded', SharedForm.initialize.bind(SharedForm));
