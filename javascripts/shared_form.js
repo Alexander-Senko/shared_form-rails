@@ -1,4 +1,11 @@
-var SharedForm = Object.extend(Class.create({ // instance methods
+//= require shared_form/form
+//= require shared_form/uploader
+//= require shared_form/config
+// TODO: extract thumbnails-related logic
+
+var SharedForm = SharedForm || {};
+
+SharedForm = Object.extend(Class.create({ // instance methods
 	loading: [], // IDs of objects being requested
 
 	defaults: $H({
@@ -39,56 +46,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 
 		this.ownsThumbnails = (this.thumbnails.select('.thumbnail').size() == $H(this.objects).size()); // TODO(?): better check
 
-		document.body.observe('drop', function(event) {
-			event.stop();
-			$A(event.dataTransfer.files).each(function(file) {
-				// TODO: extract meta-info
-				if (file.type.startsWith('image')) {
-					var object = this.add({ filename: file.name, data: {
-							thumbnail: {},
-							preview:   {}
-						},
-							setImageURL: function (imageURL) {
-							object.data.thumbnail.url = imageURL;
-							object.data.preview.url   = imageURL;
-							this.register(object);
-						}.bind(this)
-					});
-
-					if (window.URL) { // i.e. Gecko 2.0
-						object.setImageURL(URL.createObjectURL(file));
-					} else { // i.e. Gecko 1.9.2
-						Event.observe(new FileReader(), 'load', function(event) {
-							object.setImageURL(event.target.result);
-						}).readAsDataURL(file);
-					}
-				}
-
-				var data    = new FormData();
-				var request = new XMLHttpRequest(); // Ajax.Request can't handle multipart/form-data
-				request.open('POST', this.objectURL(object), true);
-				data.append(this.form.name + '[data]', file);
-				request.onload = function (event) {
-					var responseJSON = event.target.response.evalJSON();
-
-					if (parseInt(request.status / 100) == 2 || request.status == 304) {
-						if (window.URL)
-							URL.revokeObjectURL(object.data.thumbnail.url);
-						this.register(responseJSON, object.id);
-					} else {
-						object.thumbnailElement.fire('upload:failed', Object.extend(object, {
-							file:   file,
-							errors: responseJSON
-						}));
-					}
-				}.bind(this);
-				request.send(data);
-			}, this);
-		}.bind(this)
-		).observe('dragenter', Event.stop
-		).observe('dragleave', Event.stop
-		).observe('dragover',  Event.stop
-		);
+		this.uploader = new SharedForm.Uploader(this);
 
 		Object.extend(this.form, SharedForm.Form).initialize(this);
 	},
@@ -230,7 +188,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 	isLoading: function() {
 		return this.loading.any();
 	}
-}), { // class methods
+}), Object.extend(SharedForm, { // class methods
 	NEW_ID: 1,
 	all: [],
 
@@ -240,284 +198,8 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 				new SharedForm(form, options)
 			);
 		});
-	},
-
-	Form: {
-		initialize: function(editor) {
-			this.editor = editor;
-
-			this.sharedControls = this.getElements().map(function(element) {
-				if (element.type.match(/submit|image|reset/)) return;
-				if (!this.name || element.name.startsWith(this.name+'[')) {
-					return Object.extend(element, SharedForm.Form.Element).initialize(this.name);
 	}
-			}, this).compact();
+}));
 
-			if ($H(this.editor.objects).any())
-				this.refresh();
-
-			this.observe('change', this.changed.bind(this));
-			this.observe('reset',  this.reset.bind(this));
-
-			return this;
-		},
-
-		// TODO: support for non-text multiple controls
-		//       * check-boxes
-		//       * select-multiple
-		refresh: function() {
-			if (this.editor.isLoading()) return;
-			this.sharedControls.invoke('refresh', $H(this.editor.objects));
-			this.changed();
-		},
-
-		fill: function(object) {
-			this.sharedControls.invoke('fill', object);
-			this.changed();
-		},
-
-		switchLanguage: function(lang) {
-			this.select('fieldset[lang ="'+lang+'"]').each(Element.show);
-			this.select('fieldset[lang!="'+lang+'"]').each(Element.hide);
-		},
-
-		// TODO: use FormData if available
-		submit: function(event) { event && event.stop();
-			var multiple = [];
-			var disabled = this.sharedControls.map(function(element) {
-				if (element.isModified()) { // enabled
-					if (element.multiple)
-						multiple.push(element);
-				} else if (Object.isElement(this[element.name])) {
-					element.disable();
-					return element;
-				} else { // multiple elements with the same name
-					return $A(this[element.name]).invoke('disable');
-				}
-			}, this).compact().flatten();
-
-			$H(this.editor.objects).values().each(function(object) {
-				this.editor.loading.push(object.id);
-
-				multiple.each(function(element) {
-					var objectValue = [];
-					element.register(object, function(value) { objectValue.push(value) });
-					element.store('value', element.value);
-					element.value = objectValue.without.apply(objectValue, element.variants.shared)
-					                .concat(element.normalizedValue(true))
-					                .join(element.variants.DELIMITER);
-				});
-
-				// TODO: refactor
-				// NOTE: see also the part below
-				if (object.local)
-					disabled.each(function(element) {
-						element.enable();
-						element.store('value', element.value);
-						element.register(object, function(value) { element.value = value });
-					});
-
-				new Ajax.Request(this.editor.objectURL(object), { method: object.local ? 'post' : 'put',
-					parameters: this.serialize(),
-					onSuccess: function(transport) {
-						this.editor.updateThumbnail(object.thumbnailElement, transport.responseJSON);
-						(function() {
-							if (!$H(this.editor.objects).any())
-								this.reset();
-						}).bind(this).defer();
-					}.bind(this),
-					onFailure: function(transport) {
-						var errors = transport.responseJSON;
-						// TODO: error handling
-					}.bind(this),
-					onComplete: function(transport) {
-						this.loading = this.loading.without(object.id);
-					}.bind(this.editor)
-				});
-
-				// TODO: refactor
-				// NOTE: see above part also
-				if (object.local)
-					disabled.each(function(element) {
-						element.disable();
-						element.value = element.retrieve('value');
-					});
-
-				multiple.each(function(element) {
-					element.value = element.retrieve('value');
-				});
-			}, this);
-
-			disabled.invoke('enable');
-		return false },
-
-		// TODO: confirm
-		reset: function(event) { event && event.stop();
-			this.sharedControls.invoke('reset');
-			this.changed();
-		return false },
-
-		isModified: function() {
-			return !!this.down('.modified') &&
-			       $H(this.editor.objects).any() ||
-			       $H(this.editor.objects).values().find(function(o) { return o.local });
-		},
-
-		changed: function(event) {
-			if (event) event.element().changed();
-			this.down('input[type="submit"]').disabled = !this.isModified();
-		},
-
-		Element: {
-			initialize: function(objectName) {
-				if (objectName)
-					this.objectName = this.name.sub(new RegExp('^'+objectName), 'object')
-					                  .gsub('[', '["').gsub(']', '"]');
-				else
-					this.objectName = 'object["'+this.name+'"]';
-				if (this.detectLang())
-					this.objectNameWithoutLocale = this.objectName.sub('_'+this.lang+'"]', '"]');
-
-				this.variants = Object.extend($H(), SharedForm.Form.Element.Variants);
-				this.variants.initial = this.value;
-
-				return this;
-			},
-
-			register: function(object, register) {
-				var value = eval(this.objectName) ||
-				            eval(this.objectNameWithoutLocale);
-				if (!value) return;
-
-				if (!Object.isFunction(register))
-					register = this.variants.register.bind(this.variants);
-
-				if (Object.isArray(value)) {
-					this.multiple = true;
-
-					value.each(function(o) {
-						if (o.lang && o.lang != this.lang) return;
-						switch (this.type) {
-							case 'text':
-							case 'textarea':
-								register(o.name || o, object);
-							break;
-						}
-					}, this);
-				} else {
-					register(value, object);
-				}
-			},
-
-			refresh: function(objects) {
-				this.variants._object = {}; // FIXME: use API
-
-				objects.values().each(this.register, this);
-
-				var values = this.variants.keys().select(function(value) {
-					return this.get(value).size() == objects.size();
-				}, this.variants);
-
-				var value, shared;
-				if (this.multiple) {
-					value  = values.join(this.variants.DELIMITER);
-					shared = values.sort();
-				} else if (values.any()) {
-					value  = values[0];
-					shared = values[0];
-				} else {
-					value  = '';
-					shared = undefined;
-				}
-
-				if (!this.isModified())
-					if (this.type == 'checkbox') {
-						this.indeterminate = value == '';
-						this.checked       = value;
-					} else
-						this.value         = value;
-				this.variants.shared = shared;
-				this.changed();
-			},
-
-			fill: function(object) {
-				if (this.type == 'hidden') return;
-				if (this.multiple) {
-					var objectValue = [];
-					this.register(object, function(value) { objectValue.push(value) });
-					this.value = objectValue.join(this.variants.DELIMITER);
-				} else
-					this.register(object, function(value) { this.value = value }.bind(this));
-				this.changed();
-			},
-
-			reset: function() {
-				if (this.isModified()) {
-					this.value = this.variants.normalizedShared() || this.variants.initial;
-					this.changed();
-				}
-			},
-
-			isModified: function() {
-				if (!this.variants) return;
-				var value = this.normalizedValue();
-				if (Object.isUndefined(this.variants.shared)) {
-					return !!value || Object.isNumber(value); // special case for 0
-				} else {
-					return value != this.variants.normalizedShared();
-				}
-			},
-
-			changed: function(event) {
-				if (Object.isString(this.value)) this.value = this.value.strip();
-				this[(this.isModified() ? 'add' : 'remove')+'ClassName']('modified');
-			},
-
-			/* private */
-
-			normalizedValue: function(unserialized) {
-				if (this.multiple) {
-					var value = this.value.split(/\s*[,;]\s*/).without('').sort();
-					return unserialized ? value : value.join(this.variants.DELIMITER);
-				} else if (this.type == 'checkbox') {
-					if (this.checked) return this.value;
-				} else {
-					return this.value;
-				}
-			},
-
-			detectLang: function() {
-				if (!this.lang) {
-					var container = this.up('[lang]');
-					this.lang = container ? container.lang : '';
-				}
-
-				return this.lang;
-			},
-
-			Variants: {
-				DELIMITER: ', ',
-				MAP: {},
-
-				register: function(value, object) {
-					this.set(value, (this.get(value) || []).concat([ object.id ]));
-				},
-
-				normalizedShared: function() {
-					if (Object.isArray(this.shared)) {
-						return this.shared.join(this.DELIMITER);
-					} else {
-						return this.MAP[this.shared] || this.shared;
-					}
-				}
-			}
-		}
-	}
-});
-
-SharedForm.Form.Element.Variants.MAP[false] = 0;
-SharedForm.Form.Element.Variants.MAP[true]  = 1;
-
-SharedForm.Form.SELECTOR = 'form.shared';
 
 document.observe('dom:loaded', SharedForm.initialize.bind(SharedForm));
