@@ -1,23 +1,41 @@
 var SharedForm = Object.extend(Class.create({ // instance methods
 	loading: [], // IDs of objects being requested
 
+	defaults: $H({
+		objects: function() {
+			return []; // TODO: collect from the form
+		},
+
+		collectionURL: function() {
+			return this.form.action
+				.replace(/[?&]id=\d+/, '')
+				.replace(/\/?\d+$/,    '');
+		},
+
+		resourceURLTemplate: function() {
+			return (this.collectionURL+'?id=#{id}')
+				.replace(/[?&](.*)\?/, '?$1&');
+		},
+
+		thumbnailTemplate: function() {
+			// TODO: default template
+		}
+	}),
+
 	initialize: function(form, options) {
-		this.form                = $(form);
-		this.objects             = eval(form.getAttribute('data-objects'));
-		this.collectionURL       = decodeURI(form.getAttribute('data-collectionURL') || form.action.replace(/[?&]id=\d+/, ''));
-		this.resourceURLTemplate = new Template(decodeURIComponent(form.getAttribute('data-resourceURLTemplate') || (form.action.replace(/[?&]id=\d+/, '') + '?id=#{id}').replace(/[?&](.*)\?/, '?$1&')));
-		this.thumbnailTemplate   = new Template(decodeURIComponent(form.getAttribute('data-thumbnailTemplate'))); // TODO: default template
+		this.form = $(form);
+
+		this.setOptions(options);
+
+		this.collectionURL       = decodeURI(this.collectionURL);
+		this.resourceURLTemplate = new Template(decodeURIComponent(this.resourceURLTemplate));
+		this.thumbnailTemplate   = new Template(decodeURIComponent(this.thumbnailTemplate));
 		this.thumbnails          = form.adjacent('.thumbnails')[0] || $$('.thumbnails')[0];
 
-		if (this.objects) {
-			this.objects = this.objects.inject({}, function(hash, object) {
-				hash[object.id] = object;
-				return hash;
-			});
-		} else {
-			// TODO: collect from the form
-			this.objects = {};
-		}
+		this.objects = JSON.parse(this.objects).inject({}, function(hash, object) {
+			hash[object.id] = object;
+			return hash;
+		});
 
 		this.ownsThumbnails = (this.thumbnails.select('.thumbnail').size() == $H(this.objects).size()); // TODO(?): better check
 
@@ -73,6 +91,14 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 		);
 
 		Object.extend(this.form, SharedForm.Form).initialize(this);
+	},
+
+	setOptions: function(options) {
+		this.defaults.each(function(property) {
+			this[property.key] = options[property.key] ||
+			                     this.form.dataset[property.key.gsub('URL', 'Url')] ||
+			                     property.value.bind(this)();
+		}.bind(this));
 	},
 
 	add: function(objectOrID) {
@@ -224,7 +250,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 				if (element.type.match(/submit|image|reset/)) return;
 				if (!this.name || element.name.startsWith(this.name+'[')) {
 					return Object.extend(element, SharedForm.Form.Element).initialize(this.name);
-				}
+	}
 			}, this).compact();
 
 			if ($H(this.editor.objects).any())
