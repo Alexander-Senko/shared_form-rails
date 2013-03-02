@@ -26,13 +26,13 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 			$A(event.dataTransfer.files).each(function(file) {
 				// TODO: extract meta-info
 				if (file.type.startsWith('image')) {
-					var object = this.add({ filename: file.name,
-						thumbnail: {},
-						preview:   {},
-
+					var object = this.add({ filename: file.name, data: {
+							thumbnail: {},
+							preview:   {}
+						},
 						setImageURL: function (imageURL) {
-							object.thumbnail.url = imageURL;
-							object.preview.url   = imageURL;
+							object.data.thumbnail.url = imageURL;
+							object.data.preview.url   = imageURL;
 							this.register(object);
 						}.bind(this)
 					});
@@ -55,7 +55,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 
 					if (parseInt(request.status / 100) == 2 || request.status == 304) {
 						if (window.URL)
-							URL.revokeObjectURL(object.thumbnail.url);
+							URL.revokeObjectURL(object.data.thumbnail.url);
 						this.register(responseJSON, object.id);
 					} else {
 						object.thumbnailElement.fire('upload:failed', Object.extend(object, {
@@ -120,7 +120,7 @@ var SharedForm = Object.extend(Class.create({ // instance methods
 				if (this.ownsThumbnails || object.local) { // TODO: confirm
 					this.removeThumbnail(object);
 					if (window.URL)
-						URL.revokeObjectURL(object.thumbnail.url);
+						URL.revokeObjectURL(object.data.thumbnail.url);
 				}
 				delete this.objects[object.id];
 				this.loading = this.loading.without(object.id);
