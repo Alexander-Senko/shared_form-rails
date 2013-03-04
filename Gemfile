@@ -12,3 +12,5 @@ gemspec
 
 # To use debugger
 # gem 'debugger'
+
+gem 'stub', git: 'https://github.com/softpro/stub.git'
