@@ -13,11 +13,13 @@ Gem::Specification.new do |s|
 	s.summary     = 'SharedForm for Rails.'
 #	s.description = 'TODO: Description of SharedFormRails.'
 
-	s.files = Dir['{app,config,db,lib}/**/*'] + ['MIT-LICENSE', 'rails', 'README.rdoc']
+	s.files = Dir['{app,config,db,lib}/**/*'] + ['MIT-LICENSE', 'Rakefile', 'README.rdoc' ]
 
 	s.add_dependency 'rails', '~> 3.2'
 	s.add_dependency 'prototype-rails'
 	s.add_dependency 'stub'
+	s.add_dependency 'haml'
+	s.add_dependency 'simple_form'
 
 	s.add_development_dependency 'sqlite3'
 end

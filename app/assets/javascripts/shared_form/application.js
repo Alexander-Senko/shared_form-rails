@@ -12,4 +12,5 @@
 //
 //= require prototype
 //= require prototype_ujs
+//= require shared_form
 //= require_tree .
