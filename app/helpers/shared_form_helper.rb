@@ -1,6 +1,8 @@
 module SharedFormHelper
 	include StubHelper
 
+	delegate :locales, :multilingual?, :to => SharedForm
+
 	def shared_form_for record, options={}, &block
 		simple_form_for record, {
 			html: shared_form_html_options_for(record),
