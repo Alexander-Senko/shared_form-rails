@@ -1,5 +1,6 @@
 require 'haml'
 require 'simple_form'
+require 'prototype-rails'
 
 require 'shared_form/engine'
 
