@@ -45,6 +45,8 @@ Object.extend(SharedForm.Form, {
 	},
 
 	switchLanguage: function(lang) {
+		lang = lang || this.lang;
+
 		this.select('fieldset[lang ="'+lang+'"]').each(Element.show);
 		this.select('fieldset[lang!="'+lang+'"]').each(Element.hide);
 	},
