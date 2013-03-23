@@ -23,8 +23,9 @@ Object.extend(SharedForm.Form.Element, {
 	},
 
 	register: function(object, register) {
-		var value = eval(this.objectName) ||
-		            eval(this.objectNameWithoutLocale);
+		var value;
+		try { value = value || eval(this.objectName)              } catch(e) {}
+		try { value = value || eval(this.objectNameWithoutLocale) } catch(e) {}
 		if (!value) return;
 
 		if (!Object.isFunction(register))
