@@ -22,6 +22,7 @@ Object.extend(SharedForm.Form, {
 			this.refresh();
 
 		this.observe('change', this.changed.bind(this));
+		this.observe('submit', this.submit.bind(this));
 		this.observe('reset',  this.reset.bind(this));
 
 		return this;
