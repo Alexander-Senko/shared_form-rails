@@ -9,6 +9,7 @@ Object.extend(SharedForm.Form.Element, {
 		if (objectName)
 			this.objectName = this.name
 				.sub(new RegExp('^'+objectName), 'object')
+				.sub('_attributes]', ']')
 				.gsub('[', '["')
 				.gsub(']', '"]');
 		else
