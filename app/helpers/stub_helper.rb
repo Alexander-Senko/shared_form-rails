@@ -4,17 +4,9 @@ module StubHelper
 	# TODO: remove the patching
 	def resource_stub
 		@resource_stub ||= begin
-			stub = Stub::Template::Prototype.new resource_class.new { |record|
-				class << record
-					def new_record?
-						false
-					end
-
-					def id
-						'#{id}'
-					end
-				end
-			}
+			stub = Stub::Template::Prototype.new(
+				empty_resource id: '#{id}' # TODO: remove template code
+			)
 
 			if stub.respond_to? :decorator_class then
 				stub.decorator_class.new stub
@@ -29,5 +21,20 @@ module StubHelper
 		render(stub).tap do |html|
 			html.gsub! %r'src="/[^"]+/\#{', 'src="#{' # remove relative URL prefix
 		end
+	end
+
+	def empty_resource methods = {}
+		resource_class.new { |record|
+			class << record
+				def new_record?
+					false
+				end
+			end
+
+			for key, value in methods do
+				record.singleton_class.
+					send(:define_method, key) { value }
+			end
+		}
 	end
 end
