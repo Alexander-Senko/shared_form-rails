@@ -92,14 +92,9 @@ Object.extend(SharedForm.Form, {
 			new Ajax.Request(this.editor.objectURL(object), { method: object.local ? 'post' : 'put',
 				parameters: this.serialize(),
 				onSuccess: function(transport) {
-					this.editor.updateThumbnail(
-						object.thumbnailElement, transport.responseJSON
-					);
+					this.editor.register(transport.responseJSON, object.id);
 
-					(function() {
-						if (!$H(this.editor.objects).any())
-							this.reset();
-					}).bind(this).defer();
+					this.refresh.bind(this).defer();
 				}.bind(this),
 				onFailure: function(transport) {
 					var errors = transport.responseJSON;

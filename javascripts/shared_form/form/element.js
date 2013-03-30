@@ -50,6 +50,9 @@ Object.extend(SharedForm.Form.Element, {
 	},
 
 	refresh: function(objects) {
+		if (!objects.any())
+			return this.reset();
+
 		this.variants._object = {}; // FIXME: use API
 
 		objects.values().each(this.register, this);
