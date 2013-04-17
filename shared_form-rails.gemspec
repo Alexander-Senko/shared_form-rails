@@ -9,11 +9,12 @@ Gem::Specification.new do |s|
 	s.version     = SharedForm::VERSION
 	s.authors     = [ 'Alexander Senko' ]
 	s.email       = [ 'Alexander.Senko@gmail.com' ]
-#	s.homepage    = 'TODO'
+	s.homepage    = 'https://github.com/softpro/shared_form-rails'
 	s.summary     = 'SharedForm for Rails.'
-#	s.description = 'TODO: Description of SharedFormRails.'
+	s.description = 'SharedForm JS library with some Rails view helpers, templates & additional scripts.'
+	s.license     = 'MIT'
 
-	s.files = Dir['{app,config,db,lib}/**/*'] + ['MIT-LICENSE', 'Rakefile', 'README.rdoc' ]
+	s.files = Dir['{app,config,db,lib}/**/*'] + [ 'MIT-LICENSE', 'Rakefile', 'README.rdoc' ]
 
 	s.add_dependency 'rails', '>= 3.2'
 	s.add_dependency 'prototype-rails'
